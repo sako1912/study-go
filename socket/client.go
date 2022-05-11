@@ -11,7 +11,7 @@ func main() {
 	log.Printf(":: client 실행 ::")
 
 	//client 서버와 연결
-	conn, err := net.Dial("tcp", "127.0.0.1:20000")
+	conn, err := net.Dial("tcp", "127.0.0.1:10000")
 	if err != nil {
 		log.Println("fail connect server :", err)
 	}

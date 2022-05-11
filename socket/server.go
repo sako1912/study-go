@@ -10,7 +10,7 @@ import (
 func main() {
 	fmt.Println("start sercer go")
 	//소켓 대기중
-	l, err := net.Listen("tcp", "127.0.0.1:20000")
+	l, err := net.Listen("tcp", "127.0.0.1:10000")
 	if err != nil {
 		log.Println(err)
 	}
@@ -29,7 +29,7 @@ func main() {
 		//main 프로세스 종료시 연결도 종료
 		defer conn.Close()
 
-		//handler에 연결 전달 : 연결에 대한 처리를 go 루틴 사용
+		//handler에 연결 전달 : 연결에 대한 처리를 go 루틴 사용 :점원이 여명 쓰레드멀티
 		go connHandler(conn)
 	}
 }
@@ -41,17 +41,17 @@ func connHandler(conn net.Conn) {
 
 	for {
 		//연결이 client에서 온걸 읽음 : client가 값을 줄때까지 blocking되어 대기하다가 값을 주면 읽어들인다
-		n, err := conn.Read(recvBuf)
+		n, err := conn.Read(recvBuf) //length 몇
 
 		log.Println("coon Read :: ", n)
 		//에러 처리
 		if err != nil {
 			//입력이 종료되면 종료
 			if io.EOF == err {
-				log.Println("fisnish connect :", err)
+				log.Println("connection is closed from client :", err)
 				return
 			}
-			log.Println("connect fail : ", err)
+			log.Println("fail to read : ", err)
 			return
 		}
 

@@ -33,7 +33,7 @@ func main() {
 
 		}
 		//프로세스 종료시 연결도 종료
-		defer conn.Close()
+		//defer conn.Close()
 
 		//handler에 연결 전달 : 연결에 대한 처리를 여러개 하기위해 go 루틴 사용
 		go connHandler(conn)
@@ -48,44 +48,47 @@ func connHandler(conn net.Conn) {
 	recvBuf := make([]byte, 4096)
 
 	//반복하여 읽음
-	for {
-		//연결이 client에서 온걸 읽음 : client가 값을 줄때까지 blocking되어 대기하다가 값을 주면 읽어들인다
-		n, err := conn.Read(recvBuf)
-
-		log.Println("connect read :: ", n)
-		//에러 처리
-		if err != nil {
-			//입력이 종료되면 종료
-			if io.EOF == err {
-				log.Println("fisnish connect :", err)
-				return
-			}
-			log.Println("connect fail : ", err)
+	//for {
+	//연결이 client에서 온걸 읽음 : client가 값을 줄때까지 blocking되어 대기하다가 값을 주면 읽어들인다
+	n, err := conn.Read(recvBuf)
+	log.Println("connect read :: ", n)
+	//에러 처리
+	if err != nil {
+		//입력이 종료되면 종료
+		if io.EOF == err {
+			log.Println("connection is closed from client :", err)
 			return
 		}
-
-		if 0 < n {
-			log.Println("client start ennene")
-			//buf 를 data에 할당
-			//client 에서 받아온 값을 data에 할당 : 받아온 길이 만큼 슬라이스를 잘라서 출력
-			data := recvBuf[:n]
-			log.Println("client send message :: ", string(data))
-
-			_, err = conn.Write([]byte("HTTP/1.1 200 OK"))
-
-			//client data 파일로 떨굼
-			//createNetInfoFile(data)
-
-			//response:: client의 값을 받아서 그대로 다시 client에 전송
-			//_, err = conn.Write(data[:n])
-
-			//에러 처리
-			if err != nil {
-				log.Println("response err :: ", err)
-				return
-			}
-		}
+		log.Println("fail to read : ", err)
+		return
 	}
+
+	if 0 < n {
+		log.Println("client start ennene")
+		//buf 를 data에 할당
+		//client 에서 받아온 값을 data에 할당 : 받아온 길이 만큼 슬라이스를 잘라서 출력
+		data := recvBuf[:n]
+		log.Println("client send message :: ", string(data))
+
+		_, err = conn.Write([]byte("HTTP/1.1 200 OK\r\n"))
+		conn.Write([]byte("content-type: text/html; charset=UTF-8\r\n"))
+		conn.Write([]byte("\r\n"))
+		conn.Write([]byte("hello"))
+
+		//client data 파일로 떨굼
+		//createNetInfoFile(data)
+
+		//response:: client의 값을 받아서 그대로 다시 client에 전송
+		//_, err = conn.Write(data[:n])
+
+		//에러 처리
+		if err != nil {
+			log.Println("response err :: ", err)
+			return
+		}
+		conn.Close()
+	}
+	//}
 }
 
 //client info 파일로 만듬
