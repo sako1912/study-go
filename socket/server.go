@@ -37,7 +37,8 @@ func main() {
 func connHandler(conn net.Conn) {
 	// byte  buf 생성
 	recvBuf := make([]byte, 4096)
-	//반복하여 읽음
+	//반복하여 읽음test
+
 	for {
 		//연결이 client에서 온걸 읽음 : client가 값을 줄때까지 blocking되어 대기하다가 값을 주면 읽어들인다
 		n, err := conn.Read(recvBuf)
