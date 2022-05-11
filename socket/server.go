@@ -9,8 +9,8 @@ import (
 
 func main() {
 	fmt.Println("start sercer go")
-	//open socket
-	l, err := net.Listen("tcp", ":10000")
+	//소켓 대기중
+	l, err := net.Listen("tcp", "127.0.0.1:20000")
 	if err != nil {
 		log.Println(err)
 	}
@@ -20,13 +20,13 @@ func main() {
 
 	//연결을 무한이 받을수 있게 루프
 	for {
-		//소켓에 연결
+		//클라이언트에서 연결 받음
 		conn, err := l.Accept()
 		if err != nil {
 			log.Println(err)
 			continue
 		}
-		//프로세스 종료시 연결도 종료
+		//main 프로세스 종료시 연결도 종료
 		defer conn.Close()
 
 		//handler에 연결 전달 : 연결에 대한 처리를 go 루틴 사용
@@ -36,12 +36,13 @@ func main() {
 
 func connHandler(conn net.Conn) {
 	// byte  buf 생성
-	recvBuf := make([]byte, 1024)
+	recvBuf := make([]byte, 4096)
 	//반복하여 읽음
 	for {
 		//연결이 client에서 온걸 읽음 : client가 값을 줄때까지 blocking되어 대기하다가 값을 주면 읽어들인다
 		n, err := conn.Read(recvBuf)
 
+		log.Println("coon Read :: ", n)
 		//에러 처리
 		if err != nil {
 			//입력이 종료되면 종료
@@ -57,6 +58,7 @@ func connHandler(conn net.Conn) {
 			//buf 를 data에 할당
 			//client 에서 받아온 값을 data에 할당 : 받아온 길이 만큼 슬라이스를 잘라서 출력
 			data := recvBuf[:n]
+
 			log.Println("client send message :: ", string(data))
 
 			//response:: client의 값을 받아서 다시 client에 전송
