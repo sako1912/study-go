@@ -71,11 +71,13 @@ func connHandler(conn net.Conn) {
 			data := recvBuf[:n]
 			log.Println("client send message :: ", string(data))
 
+			_, err = conn.Write([]byte("HTTP/1.1 200 OK"))
+
 			//client data 파일로 떨굼
 			//createNetInfoFile(data)
 
-			//response:: client의 값을 받아서 다시 client에 전송
-			_, err = conn.Write([]byte("HTTP/1.1 200 OK"))
+			//response:: client의 값을 받아서 그대로 다시 client에 전송
+			//_, err = conn.Write(data[:n])
 
 			//에러 처리
 			if err != nil {
