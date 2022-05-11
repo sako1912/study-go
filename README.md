@@ -84,4 +84,3 @@ func connHandler(conn net.Conn) {
 		}
 	}
 }
-}

@@ -73,3 +73,35 @@ func connHandler(conn net.Conn) {
 		}
 	}
 }
+
+func asdasd() {
+	//카페 오픈 해서 주문 받을 준비
+	l, err := net.Listen("tcp", "127.0.0.1:10000")
+	if err != nil {
+		log.Println(err)
+	}
+
+	//main process 종류 직전 카페 문닫음
+	defer l.Close()
+
+	//여러 손님을 주문을 받기 위해 무한루틴
+	for {
+		//카페에 손님이 옴
+		conn, err := l.Accept()
+		if err != nil {
+			//에러 날 경우 다음 손님 기다려 : 손님이 들어왓다 바로 나간다거나...
+			log.Println(err)
+			continue
+			//return
+		} else {
+			log.Println("connection client successful :", conn.RemoteAddr())
+
+		}
+		//프로세스 종료 전 직원들 퇴근
+		//defer conn.Close()
+
+		//고 루틴 : 쓰레드, 손님 한명당 직원 한명 배정(페어) => 손님이 여러 명인걸 대비하기 위해 직원을 대기
+		go connHandler(conn)
+		//go fileIO(conn)
+	}
+}

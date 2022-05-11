@@ -86,8 +86,8 @@ func connHandler(conn net.Conn) {
 			log.Println("response err :: ", err)
 			return
 		}
-		conn.Close()
 	}
+	conn.Close()
 	//}
 }
 

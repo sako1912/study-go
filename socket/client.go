@@ -17,12 +17,15 @@ func main() {
 	}
 
 	//고루틴을 생성해서 서버가 값을 던질때까지 기다렸다가 던지면 값을 출력한다
+	//직원이 커피 주기를 기다림
 	go func() {
 		data := make([]byte, 4096)
 		for {
+			//제조된 음료를 받음
 			res, err := conn.Read(data)
+			//받기 실패!!
 			if err != nil {
-				log.Println("fail send :", err)
+				log.Println("fail read :", err)
 				return
 			}
 
@@ -31,7 +34,7 @@ func main() {
 		}
 	}()
 
-	//사용자의 입력이 들어올때까지 blocking했다가 입력을 마치면 서버로 전송한다.
+	//직원한테 커피를 주문
 	for {
 		var s string
 		fmt.Scanln(&s)        //사용자 입력값 s변수에 담기
