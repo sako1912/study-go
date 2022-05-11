@@ -11,22 +11,22 @@ func main() {
 	log.Printf(":: client 실행 ::")
 
 	//client 서버와 연결
-	conn, err := net.Dial("tcp", ":4000")
+	conn, err := net.Dial("tcp", "127.0.0.1:10000")
 	if err != nil {
 		log.Println("fail connect server :", err)
 	}
 
 	//고루틴을 생성해서 서버가 값을 던질때까지 기다렸다가 던지면 값을 출력한다
 	go func() {
-		data := make([]byte, 1024)
+		data := make([]byte, 4096)
 		for {
-			n, err := conn.Read(data)
+			res, err := conn.Read(data)
 			if err != nil {
 				log.Println("fail send :", err)
 				return
 			}
 
-			log.Println("sever send : " + string(data[:n]))
+			log.Println("sever send : " + string(data[:res]))
 			time.Sleep(time.Duration(3) * time.Second)
 		}
 	}()

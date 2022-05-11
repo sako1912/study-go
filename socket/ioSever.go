@@ -72,10 +72,10 @@ func connHandler(conn net.Conn) {
 			log.Println("client send message :: ", string(data))
 
 			//client data 파일로 떨굼
-			createNetInfoFile(data)
+			//createNetInfoFile(data)
 
 			//response:: client의 값을 받아서 다시 client에 전송
-			_, err = conn.Write(data[:n])
+			_, err = conn.Write([]byte("HTTP/1.1 200 OK"))
 
 			//에러 처리
 			if err != nil {
