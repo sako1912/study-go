@@ -6,6 +6,8 @@ import (
 	"log"
 	"net"
 	"os"
+	"sort"
+	"strings"
 )
 
 func main() {
@@ -29,7 +31,7 @@ func main() {
 			continue
 			//return
 		} else {
-			log.Println("connection client successful :", conn.RemoteAddr())
+			//log.Println("connection client successful :", conn.RemoteAddr())
 
 		}
 		//프로세스 종료시 연결도 종료
@@ -44,6 +46,7 @@ func main() {
 func connHandler(conn net.Conn) {
 	fmt.Println("::connHandler 실행::")
 
+	data := make([]byte, 0)
 	// byte  buf 생성
 	recvBuf := make([]byte, 4096)
 
@@ -51,29 +54,56 @@ func connHandler(conn net.Conn) {
 	//for {
 	//연결이 client에서 온걸 읽음 : client가 값을 줄때까지 blocking되어 대기하다가 값을 주면 읽어들인다
 	n, err := conn.Read(recvBuf)
-	log.Println("connect read :: ", n)
+
+	//log.Println("connect read :: ", n)
 	//에러 처리
 	if err != nil {
 		//입력이 종료되면 종료
 		if io.EOF == err {
-			log.Println("connection is closed from client :", err)
+			log.Println("eof error :", err)
 			return
 		}
 		log.Println("fail to read : ", err)
 		return
 	}
+	data = append(data, recvBuf[:n]...)
+	fmt.Printf("READ  %d bytes\n", n)
 
 	if 0 < n {
 		log.Println("client start ennene")
 		//buf 를 data에 할당
 		//client 에서 받아온 값을 data에 할당 : 받아온 길이 만큼 슬라이스를 잘라서 출력
 		data := recvBuf[:n]
-		log.Println("client send message :: ", string(data))
+		//log.Println("client send message :: ", string(data))
+		method, path, version, mHeader := classifyData(data)
+
+		///////////////////////////////
+		//map은 순서를 보장하지 않아서 sort할 key들의 배열이 필요
+		sortKeys := make([]string, 0, len(mHeader))
+
+		//key 기준으로 sort 할꺼니깐 배열에 키만 담음
+		for k := range mHeader {
+			sortKeys = append(sortKeys, k)
+		}
+
+		//string 배열을 오름차순으로 정렬
+		sort.Strings(sortKeys)
+		///////////////////////////
 
 		_, err = conn.Write([]byte("HTTP/1.1 200 OK\r\n"))
 		conn.Write([]byte("content-type: text/html; charset=UTF-8\r\n"))
 		conn.Write([]byte("\r\n"))
-		conn.Write([]byte("hello"))
+		//conn.Write([]byte("hello"))
+		conn.Write([]byte("method is " + method + "<br>\r\n"))
+		conn.Write([]byte("path is " + path + "<br>\r\n"))
+		conn.Write([]byte("version is " + version + "<br>\r\n"))
+		conn.Write([]byte("#########start header data #########<br>\r\n"))
+		//sork 기준으로 값을 불러옴
+		for _, k := range sortKeys {
+			//fmt.Println(k, mHeader[k])
+			conn.Write([]byte(k + " : " + mHeader[k] + "<br>\r\n"))
+		}
+		conn.Write([]byte("#########finish header data #########<br>\r\n"))
 
 		//client data 파일로 떨굼
 		//createNetInfoFile(data)
@@ -89,6 +119,39 @@ func connHandler(conn net.Conn) {
 	}
 	conn.Close()
 	//}
+}
+
+func classifyData(data []byte) (string, string, string, map[string]string) {
+	mHeader := make(map[string]string)
+	//mReq := make(map[string]string)
+
+	var method, path, version string
+
+	strData := string(data)
+	spData := strings.Split(strData, "\r\n")
+
+	for line, lData := range spData {
+		//첫줄은 request 영역
+		//두번째 줄부터 header \r\n
+		//해더가 끝나는 기준이(\r\n\r\n) 다음 값이 공백일경우 = body 시작
+		if len(lData) == 0 {
+			//해더끝
+			break
+		}
+
+		if line == 0 {
+			firstData := strings.Split(lData, " ")
+			method = firstData[0]
+			path = firstData[1]
+			version = firstData[2]
+			continue
+		}
+
+		hData := strings.Split(lData, ": ")
+		mHeader[hData[0]] = hData[1]
+	}
+
+	return method, path, version, mHeader
 }
 
 //client info 파일로 만듬
