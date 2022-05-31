@@ -40,6 +40,7 @@ func main() {
 
 		//handler에 연결 전달 : 연결에 대한 처리를 여러개 하기위해 go 루틴 사용
 		//go connHandler(conn)
+
 		go bufioHandler(conn)
 		//go fileIO(conn)
 	}
@@ -51,26 +52,74 @@ func bufioHandler(conn net.Conn) {
 
 	//req 한번에 다 스캔
 	reader := bufio.NewReader(conn)
-	l := 1
+	l := 0
+	reqHeader := make(map[string]string)
 	for {
 		l++
-		line, err := reader.ReadString('\n') //\r\n이 불가하니 scanner func을 사용해야할듯...
 
-		if err != nil {
+		//line, err := reader.ReadString('\n') //\r\n이 불가하니 scanner func을 사용해야할듯...
+		line, isPrefix, err := reader.ReadLine()
+
+		if isPrefix || err != nil {
 			log.Println("Error Read : ", err)
+		}
 
-			conn.Close()
+		if len(line) == 0 {
 			break
 		}
 
-		log.Println("line length : ", len(line))
+		// byte to string
+		strLine := string(line)
+		log.Println("strLine : ", strLine)
+		if l == 1 {
+			_, err = conn.Write([]byte("HTTP/1.1 200 OK\r\n"))
+			conn.Write([]byte("content-type: text/html; charset=UTF-8\r\n"))
+			conn.Write([]byte("\r\n"))
 
-		if len(line) == 0 || line == "" {
-			log.Println(": fisnish header : ")
+			firstData := strings.Split(strLine, " ")
+			method := firstData[0]
+			path := firstData[1]
+			version := firstData[2]
 
+			conn.Write([]byte("method is " + method + "<br>\r\n"))
+			conn.Write([]byte("path is " + path + "<br>\r\n"))
+			conn.Write([]byte("version is " + version + "<br>\r\n"))
+			conn.Write([]byte("#########start header data #########<br>\r\n"))
+		} else {
+			tHeader := strings.Split(strLine, ": ")
+			reqHeader[tHeader[0]] = tHeader[1]
 		}
 	}
+
+	writeHeader(conn, reqHeader)
 	conn.Close()
+
+}
+
+func getSortKeys(object map[string]string) []string {
+	///////////////////////////////
+	//map은 순서를 보장하지 않아서 sort할 key들의 배열이 필요
+	sortKeys := make([]string, 0, len(object))
+
+	//key 기준으로 sort 할꺼니깐 배열에 키만 담음
+	for k := range object {
+		sortKeys = append(sortKeys, k)
+	}
+
+	//string 배열을 오름차순으로 정렬
+	sort.Strings(sortKeys)
+
+	return sortKeys
+	///////////////////////////
+}
+
+func writeHeader(conn net.Conn, reqHeader map[string]string) {
+	//header sort
+	sortKeys := getSortKeys(reqHeader)
+	//write : key 기준으로
+	for _, k := range sortKeys {
+		conn.Write([]byte(k + " : " + reqHeader[k] + "<br>\r\n"))
+	}
 
 }
 func connHandler(conn net.Conn) {
