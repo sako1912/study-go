@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"io"
 	"log"
@@ -38,11 +39,40 @@ func main() {
 		//defer conn.Close()
 
 		//handler에 연결 전달 : 연결에 대한 처리를 여러개 하기위해 go 루틴 사용
-		go connHandler(conn)
+		//go connHandler(conn)
+		go bufioHandler(conn)
 		//go fileIO(conn)
 	}
 }
 
+func bufioHandler(conn net.Conn) {
+	from := conn.RemoteAddr().String()
+	log.Println("client connect from : ", from)
+
+	//req 한번에 다 스캔
+	reader := bufio.NewReader(conn)
+	l := 1
+	for {
+		l++
+		line, err := reader.ReadString('\n') //\r\n이 불가하니 scanner func을 사용해야할듯...
+
+		if err != nil {
+			log.Println("Error Read : ", err)
+
+			conn.Close()
+			break
+		}
+
+		log.Println("line length : ", len(line))
+
+		if len(line) == 0 || line == "" {
+			log.Println(": fisnish header : ")
+
+		}
+	}
+	conn.Close()
+
+}
 func connHandler(conn net.Conn) {
 	fmt.Println("::connHandler 실행::")
 
